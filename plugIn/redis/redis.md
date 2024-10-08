@@ -76,7 +76,8 @@ Web 服务器：如 Nginx、Apache 等，处理大量 HTTP 请求。
 事件驱动框架：如 Node.js，基于事件驱动模型处理异步 I/O 操作。
 示例代码
 以下是一个简化的单线程 Reactor 模型示例代码，演示了如何使用 epoll 实现 Reactor 模型的基本工作流程：
-'''
+    ```cpp
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
@@ -148,6 +149,6 @@ int main() {
     close(epfd);
     return 0;
 }
-'''
+    ```
 总结
 Reactor 模型通过事件驱动和非阻塞 I/O 机制，高效地处理大量并发连接。其高效性体现在事件驱动机制、非阻塞 I/O、线程池以及 I/O 和业务逻辑的解耦上。理解 Reactor 模型的工作原理和高效性，有助于在高性能网络编程中充分发挥其优势。
