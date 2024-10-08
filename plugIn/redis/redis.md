@@ -76,8 +76,8 @@ Web 服务器：如 Nginx、Apache 等，处理大量 HTTP 请求。
 事件驱动框架：如 Node.js，基于事件驱动模型处理异步 I/O 操作。
 示例代码
 以下是一个简化的单线程 Reactor 模型示例代码，演示了如何使用 epoll 实现 Reactor 模型的基本工作流程：
-    ```cpp
-
+   
+    ```python
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
