@@ -1,8 +1,7 @@
 ## set
 
 为什么stl中的set使用的是rb_tree而不是其他的数据结构呢，比如说hash
-ChatGPT 说：
-ChatGPT
+
 STL 中的 set 选择使用红黑树（rb_tree）而不是其他数据结构（如哈希表）主要是基于以下几个理由：
 
 1. 有序性
