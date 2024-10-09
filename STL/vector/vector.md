@@ -51,4 +51,6 @@
 8.为 MyVector 实现自定义迭代器，支持基本的迭代功能（如 begin() 和 end()）。
 异常安全
 
+https://segmentfault.com/a/1190000041334904
+
 9.讨论在 MyVector 的实现中如何处理异常，确保在异常情况下的资源管理。
