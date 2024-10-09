@@ -28,20 +28,19 @@
 ## 迭代器的类型
 
 正向迭代器 (Forward Iterator):
-
 允许从开始到结束遍历容器的元素，只能向前移动。
+
 反向迭代器 (Reverse Iterator):
-
 允许从结束到开始遍历容器的元素，只能向后移动。
+
 常量正向迭代器 (Const Forward Iterator):
-
 与正向迭代器类似，但不允许修改元素。可以读取元素的值，但不能改变它们。
+
 常量反向迭代器 (Const Reverse Iterator):
-
 与反向迭代器类似，但不允许修改元素。可以读取元素的值，但不能改变它们。
+
 双向迭代器 (Bidirectional Iterator):
-
 允许在容器中向前和向后遍历。常见于 list 和 set 等容器。
-随机访问迭代器 (Random Access Iterator):
 
+随机访问迭代器 (Random Access Iterator):
 支持常量时间的前向和后向移动，以及任意位置的直接访问。常见于 vector 和 deque 等容器。
