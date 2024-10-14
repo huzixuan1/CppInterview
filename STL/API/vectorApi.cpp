@@ -10,7 +10,7 @@ template<class T>
 void printvector(const std::vector<T>& vec)
 {
     auto it = vec.begin();
-    for(;it<=vec.end();it++)
+    for(;it!=vec.end();it++)
     {
         std::cout<<*it<<" ";
     }
@@ -83,11 +83,37 @@ void api01()
 
 }
 
+void api02()
+{
+    vector<int> v1;
+    for(int i =0;i<10;i++)
+    {
+        v1.push_back(i);
+    }
+    printvector(v1);
+
+    // operator =
+    vector<int> v2;
+    v2 = v1;
+    printvector(v2);
+
+    // assign
+    vector<int> v3;
+    v3.assign(v1.begin(),v1.end()-1);
+    printvector(v3);
+
+    // n个elem方式赋值
+    vector<int> v4;
+    v4.assign(5,2);
+    printvector(v4);
+}
+
 
 int main()
 {
     api01();
 
+    api02();
 
     return 0;
 }
