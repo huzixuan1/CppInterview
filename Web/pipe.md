@@ -1,5 +1,6 @@
 ## 进程间通信--管道
 
+```c
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
