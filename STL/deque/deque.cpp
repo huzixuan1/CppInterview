@@ -79,7 +79,8 @@ void test01()
     deq2.erase(deq2.begin());
     printdeq(deq2);
 
-    deq2.clear();
+    // deq2.clear();
+    std::sort(deq2.begin(),deq2.end());
     printdeq(deq2);
 
 }
