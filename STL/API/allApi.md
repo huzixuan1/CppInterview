@@ -7,3 +7,6 @@ https://deepinout.com/cpp/cpp-tutorials/g_stdis_function-template-in-c-with-exam
 
 ### vector
 https://blog.csdn.net/huxxyyy/article/details/108970041
+
+### 算法
+https://zhuanlan.zhihu.com/p/381607411
