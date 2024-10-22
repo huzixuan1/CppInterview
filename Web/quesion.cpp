@@ -328,6 +328,250 @@ int main()
 
     }
 
+
+
+// 练习题 1: 基于 TCP 的简单聊天服务器
+// 目标：
+// 实现一个支持多个客户端连接的简单聊天服务器，要求使用 select 实现 I/O 复用，服务器可以广播消息给所有客户端。
+// 要求：
+// 服务器端：使用 select 监听多个客户端连接。
+// 客户端：每个客户端可以发送消息给服务器，服务器将消息广播给其他所有客户端。
+// 支持多个客户端并发连接。
+
+// 服务器端
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/select.h>
+#include <vector>
+
+#define PORT 8081
+#define MAX_CLIENTS 10
+#define BUFFER_SIZE 1024
+
+int main() {
+    int server_fd, new_socket, max_sd, activity;
+    struct sockaddr_in address;
+    char buffer[BUFFER_SIZE];
+    fd_set readfds;
+    std::vector<int> client_sockets;
+
+    // 创建服务器套接字
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // 设置地址和端口
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+
+    // 绑定套接字到地址和端口
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        perror("bind failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // 开始监听连接
+    if (listen(server_fd, 3) < 0) {
+        perror("listen failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << "Listening on port " << PORT << std::endl;
+
+    while (true) {
+        // 清空套接字集合
+        FD_ZERO(&readfds);
+
+        // 添加服务器套接字到集合中
+        FD_SET(server_fd, &readfds);
+        max_sd = server_fd;
+
+        // 添加所有有效的客户端套接字到集合中
+        for (int i = 0; i < client_sockets.size(); i++) {
+            int sd = client_sockets[i];
+            if (sd > 0) {
+                FD_SET(sd, &readfds);
+            }
+            if (sd > max_sd) {
+                max_sd = sd;
+            }
+        }
+
+        // 等待活动事件的发生
+        activity = select(max_sd + 1, &readfds, nullptr, nullptr, nullptr);
+        if ((activity < 0) && (errno != EINTR)) {
+            std::cerr << "select error" << std::endl;
+        }
+
+        // 如果服务器套接字有活动，表示有新的连接请求
+        if (FD_ISSET(server_fd, &readfds)) {
+            if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&address)) < 0) {
+                perror("accept");
+                exit(EXIT_FAILURE);
+            }
+
+            std::cout << "New connection, socket fd is " << new_socket << ", ip is: " << inet_ntoa(address.sin_addr) << ", port: " << ntohs(address.sin_port) << std::endl;
+
+            // 将新的套接字添加到数组中
+            client_sockets.push_back(new_socket);
+        }
+
+        // 检查所有的客户端套接字是否有数据可读
+        for (int i = 0; i < client_sockets.size(); i++) {
+            int sd = client_sockets[i];
+            if (FD_ISSET(sd, &readfds)) {
+                // 读取客户端消息
+                int valread = read(sd, buffer, BUFFER_SIZE);
+                if (valread == 0) {
+                    // 客户端断开连接
+                    getpeername(sd, (struct sockaddr*)&address, (socklen_t*)&address);
+                    std::cout << "Host disconnected, ip " << inet_ntoa(address.sin_addr) << ", port " << ntohs(address.sin_port) << std::endl;
+                    close(sd);
+                    client_sockets.erase(client_sockets.begin() + i);
+                    i--; // 因为删除了一个元素，所以索引需要减一
+                } else {
+                    buffer[valread] = '\0';
+                    // 广播消息给所有客户端
+                    for (int j = 0; j < client_sockets.size(); j++) {
+                        if (client_sockets[j] != sd) { // 不发送给自己
+                            send(client_sockets[j], buffer, strlen(buffer), 0);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+
+// // 客户端
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/select.h>
+#include <vector>
+
+#define PORT 8081
+#define MAX_CLIENTS 10
+#define BUFFER_SIZE 1024
+
+int main() {
+    int server_fd, new_socket, max_sd, activity;
+    struct sockaddr_in address;
+    char buffer[BUFFER_SIZE];
+    fd_set readfds;
+    std::vector<int> client_sockets;
+
+    // 创建服务器套接字
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // 设置地址和端口
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+
+    // 绑定套接字到地址和端口
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        perror("bind failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // 开始监听连接
+    if (listen(server_fd, 3) < 0) {
+        perror("listen failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << "Listening on port " << PORT << std::endl;
+
+    while (true) {
+        // 清空套接字集合
+        FD_ZERO(&readfds);
+
+        // 添加服务器套接字到集合中
+        FD_SET(server_fd, &readfds);
+        max_sd = server_fd;
+
+        // 添加所有有效的客户端套接字到集合中
+        for (int i = 0; i < client_sockets.size(); i++) {
+            int sd = client_sockets[i];
+            if (sd > 0) {
+                FD_SET(sd, &readfds);
+            }
+            if (sd > max_sd) {
+                max_sd = sd;
+            }
+        }
+
+        // 等待活动事件的发生
+        activity = select(max_sd + 1, &readfds, nullptr, nullptr, nullptr);
+        if ((activity < 0) && (errno != EINTR)) {
+            std::cerr << "select error" << std::endl;
+        }
+
+        // 如果服务器套接字有活动，表示有新的连接请求
+        if (FD_ISSET(server_fd, &readfds)) {
+            if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&address)) < 0) {
+                perror("accept");
+                exit(EXIT_FAILURE);
+            }
+
+            std::cout << "New connection, socket fd is " << new_socket << ", ip is: " << inet_ntoa(address.sin_addr) << ", port: " << ntohs(address.sin_port) << std::endl;
+
+            // 将新的套接字添加到数组中
+            client_sockets.push_back(new_socket);
+        }
+
+        // 检查所有的客户端套接字是否有数据可读
+        for (int i = 0; i < client_sockets.size(); i++) {
+            int sd = client_sockets[i];
+            if (FD_ISSET(sd, &readfds)) {
+                // 读取客户端消息
+                int valread = read(sd, buffer, BUFFER_SIZE);
+                if (valread == 0) {
+                    // 客户端断开连接
+                    getpeername(sd, (struct sockaddr*)&address, (socklen_t*)&address);
+                    std::cout << "Host disconnected, ip " << inet_ntoa(address.sin_addr) << ", port " << ntohs(address.sin_port) << std::endl;
+                    close(sd);
+                    client_sockets.erase(client_sockets.begin() + i);
+                    i--; // 因为删除了一个元素，所以索引需要减一
+                } else {
+                    buffer[valread] = '\0';
+                    // 广播消息给所有客户端
+                    for (int j = 0; j < client_sockets.size(); j++) {
+                        if (client_sockets[j] != sd) { // 不发送给自己
+                            send(client_sockets[j], buffer, strlen(buffer), 0);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+
    close(sock);
 
     return 0;
