@@ -1,14 +1,4 @@
 
-// 练习题 2: 使用 epoll 的多客户端并发服务器
-// 目标：
-// 实现一个使用 epoll 的高效并发服务器，支持多个客户端的同时连接，并能正确处理客户端的消息。
-
-// 要求：
-
-// 服务器使用 epoll 进行 I/O 复用，提高性能。
-// 服务器能够处理多个客户端连接，并根据客户端的输入做出响应。
-// 客户端可以发送简单的指令，如 "ping"，服务器返回 "pong"。
-
 // 练习题 4: 使用 poll 的服务器程序
 // 目标：
 // 用 poll 实现一个多客户端的服务器，服务器需要响应不同客户端的请求。
@@ -563,6 +553,192 @@ int main() {
     return 0;
 }
 
+
+// 练习题 2: 使用 epoll 的多客户端并发服务器
+// 目标：
+// 实现一个使用 epoll 的高效并发服务器，支持多个客户端的同时连接，并能正确处理客户端的消息。
+// 要求：
+    // 服务器使用 epoll 进行 I/O 复用，提高性能。
+    // 服务器能够处理多个客户端连接，并根据客户端的输入做出响应。
+    // 客户端可以发送简单的指令，如 "ping"，服务器返回 "pong"。
+
+// 服务端
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/epoll.h>
+#include <vector>
+
+#define PORT 8080
+#define MAX_EVENTS 10
+#define BUFFER_SIZE 1024
+
+int main() {
+    int server_fd, new_socket;
+    struct sockaddr_in address;
+    int opt = 1;
+    int addrlen = sizeof(address);
+    char buffer[BUFFER_SIZE] = {0};
+
+    // 创建套接字
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("socket failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // 设置套接字选项
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+        perror("setsockopt");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // 绑定地址和端口
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        perror("bind failed");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // 监听连接
+    if (listen(server_fd, 3) < 0) {
+        perror("listen");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    // 创建 epoll 实例
+    int epoll_fd = epoll_create1(0);
+    if (epoll_fd == -1) {
+        perror("epoll_create1");
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    struct epoll_event event;
+    struct epoll_event events[MAX_EVENTS];
+    event.events = EPOLLIN;
+    event.data.fd = server_fd;
+
+    // 将服务器套接字添加到 epoll 实例中
+    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_fd, &event) == -1) {
+        perror("epoll_ctl: server_fd");
+        close(server_fd);
+        close(epoll_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << "Listening on port " << PORT << std::endl;
+
+    while (true) {
+        int n = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+        for (int i = 0; i < n; i++) {
+            if (events[i].data.fd == server_fd) {
+                // 接受新的连接
+                new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+                if (new_socket < 0) {
+                    perror("accept");
+                    continue;
+                }
+                std::cout << "New connection" << std::endl;
+                event.events = EPOLLIN;
+                event.data.fd = new_socket;
+                if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_socket, &event) == -1) {
+                    perror("epoll_ctl: new_socket");
+                    close(new_socket);
+                }
+            } else {
+                // 处理客户端消息
+                int client_fd = events[i].data.fd;
+                int valread = read(client_fd, buffer, BUFFER_SIZE);
+                if (valread > 0) {
+                    buffer[valread] = '\0';
+                    std::cout << "Received: " << buffer << std::endl;
+                    if (strcmp(buffer, "ping") == 0) {
+                        send(client_fd, "pong", strlen("pong"), 0);
+                    } else {
+                        send(client_fd, "unknown command", strlen("unknown command"), 0);
+                    }
+                } else if (valread == 0) {
+                    std::cout << "Client disconnected" << std::endl;
+                    close(client_fd);
+                } else {
+                    perror("read");
+                    close(client_fd);
+                }
+            }
+        }
+    }
+
+    close(server_fd);
+    close(epoll_fd);
+    return 0;
+}
+
+
+// 客户端
+#include <iostream>
+#include <cstring>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+int main() {
+    int sock = 0;
+    struct sockaddr_in serv_addr;
+    char buffer[BUFFER_SIZE] = {0};
+
+    // 创建套接字
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        std::cerr << "Socket creation error" << std::endl;
+        return -1;
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+
+    // 将IP地址转换为二进制形式
+    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+        std::cerr << "Invalid address / Address not supported" << std::endl;
+        return -1;
+    }
+
+    // 连接到服务器
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        std::cerr << "Connection failed" << std::endl;
+        return -1;
+    }
+
+    // 发送消息到服务器
+    const char *message = "ping";
+    send(sock, message, strlen(message), 0);
+    std::cout << "Message sent: " << message << std::endl;
+
+    // 读取服务器的响应
+    int valread = read(sock, buffer, BUFFER_SIZE);
+    if (valread > 0) {
+        buffer[valread] = '\0';
+        std::cout << "Server response: " << buffer << std::endl;
+    } else {
+        std::cerr << "Failed to receive response from server" << std::endl;
+    }
+
+    close(sock);
+    return 0;
+}
 
    close(sock);
 
