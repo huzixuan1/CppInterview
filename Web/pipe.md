@@ -92,4 +92,96 @@ int main() {
 }
 
 
+···cpp
+/**
+ * introduce:
+ *  每个子进程都有一对 socketpair，也就是说，
+ *  创建每个子进程时，会为它分配两个文件描述符。
+ *  这两个文件描述符分别对应于同一个 socketpair 的两个端口：
+ *      socket_fd[i * 2] 是父进程用来与子进程通信的一个端口
+        socket_fd[i * 2 + 1] 是子进程用来与父进程通信的另一个端口
+ * */ 
 
+
+#include <iostream>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <cstring>
+#include <sys/wait.h>
+
+const int NUM_CHILDREN = 3;  // 子进程数量
+
+// 子进程函数(子进程和父进程方向的通信)
+void childProcess(int socket_fd, int child_num) {
+    
+    // 子进程的任务
+    std::string message = "Hello from child " + std::to_string(child_num) + "!";
+    if (write(socket_fd, message.c_str(), message.size() + 1) == -1) {
+        std::cerr << "Child " << child_num << " failed to send message." << std::endl;
+        exit(1);
+    }
+
+    // 读取父进程的消息
+    char buffer[128];
+    int n = read(socket_fd, buffer, sizeof(buffer));
+    if (n > 0) {
+        std::cout << "Child " << child_num << " received from parent: " << buffer << std::endl;
+    }
+    
+    close(socket_fd);  // 关闭子进程的 socket
+    exit(0);
+}
+
+// 父进程函数
+void parentProcess(int socket_fd[], int num_children) {
+    char buffer[128];
+    
+    for (int i = 0; i < num_children; ++i) {
+        
+        // 读取子进程的消息
+        int n = read(socket_fd[i * 2], buffer, sizeof(buffer));
+        if (n > 0) {
+            std::cout << "Parent received from child " << i + 1 << ": " << buffer << std::endl;
+        }
+        
+        // 向子进程发送消息
+        std::string reply = "Message from parent to child " + std::to_string(i + 1);
+        if (write(socket_fd[i * 2], reply.c_str(), reply.size() + 1) == -1) {
+            std::cerr << "Parent failed to send message to child " << i + 1 << "." << std::endl;
+        }
+        
+        close(socket_fd[i * 2]);  // 关闭父进程端的 socket
+    }
+
+    // 等待所有子进程结束
+    for (int i = 0; i < num_children; ++i) {
+        wait(nullptr);
+    }
+}
+
+int main() {
+    int socket_fd[NUM_CHILDREN * 2];  // 每个子进程有一对 socketpair
+
+    for (int i = 0; i < NUM_CHILDREN; ++i) {
+        // 创建 socketpair
+        if (socketpair(AF_UNIX, SOCK_STREAM, 0, &socket_fd[i * 2]) == -1) {
+            std::cerr << "Failed to create socket pair" << std::endl;
+            return 1;
+        }
+
+        pid_t pid = fork();  // 创建子进程
+
+        if (pid == -1) {
+            std::cerr << "Failed to fork" << std::endl;
+            return 1;
+        } else if (pid == 0) {
+            // 子进程逻辑
+            childProcess(socket_fd[i * 2 + 1], i + 1);  // 传递子进程的 socket
+        }
+    }
+
+    // 父进程逻辑
+    parentProcess(socket_fd, NUM_CHILDREN);
+    
+    return 0;
+}
