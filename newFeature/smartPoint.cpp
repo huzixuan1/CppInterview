@@ -52,6 +52,7 @@ public:
     }
 };
 
+
 int main() {
     UniquePtr<Test> p1(new Test());  // 创建 UniquePtr
     p1->sayHello();
@@ -130,6 +131,7 @@ public:
         std::cout << "Hello from Test!" << std::endl;
     }
 };
+
 
 int main() {
     SharedPtr<Test> sp1(new Test());
