@@ -56,6 +56,20 @@ epoll 支持两种触发模式：
 水平触发：更易于使用，因为应用程序可以多次接收通知，即使没有处理完数据。
 边缘触发：性能更高，但要求应用程序在处理事件时要非常仔细，确保在通知后尽快处理所有可用数据，以免遗漏后续事件。
 
+在C++中如何实现非阻塞IO操作？
+(1)使用fcntl函数：通过调用fcntl函数设置文件描述符的O_NONBLOCK标志来使其变为非阻塞模式。例如：#include <fcntl.h>
+
+int flags = fcntl(fd, F_GETFL, 0);
+flags |= O_NONBLOCK;
+fcntl(fd, F_SETFL, flags);
+
+(2)使用ioctl函数：使用ioctl函数将文件描述符设置为非阻塞模式。例如：#include <sys/ioctl.h>
+
+int value = 1;
+ioctl(fd, FIONBIO, &value);
+
+(3)使用select、poll或epoll：这些I/O多路复用机制本身就支持非阻塞模式，通过将文件描述符添加到监视集合中，然后使用超时参数等待事件发生。无论哪种方式，一旦文件描述符被设置为非阻塞模式，读取和写入操作将立即返回，并且可能不会传输所有请求的数据量。需要在代码中处理返回值和错误码，以确保正确地处理非完整数据传输和EAGAIN/EWOULDBLOCK错误。
+
 
 
 #### select
