@@ -18,7 +18,6 @@ auto add(Args...args)
     return (...+args);  // 右折叠
 }
 
-
 // 逻辑运算
 template<typename ... Args>
 bool all_true(Args...args)
