@@ -19,64 +19,77 @@
 ```cpp
 #include <iostream>
 #include <vector>
-#include <ctime>
-#include <cstdlib>
 
 using namespace std;
 
-int PartitionHoare(std::vector<int>& nums,int left,int right)
+void merge(std::vector<int> &nums, int left, int mid, int right)
 {
-    int i = left;
-    int j = right;
-    int key = nums[left];   // 选择第一个元素当作基准
 
-    while(i != j)
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+
+    std::vector<int> leftArr(n1);
+    std::vector<int> rightArr(n2);
+
+    for (int i = 0; i < n1; i++)
     {
-        while(i<j && nums[j] >= key)
-        {
-            j--;
-        }
-        while(i<j && nums[i] <= key)
-        {
-            i++;
-        }
-        swap(nums[i],nums[j]);
+        leftArr[i] = nums[left + i];
     }
-    swap(nums[left],nums[i]);
-    return i;
-}
 
-void show(const std::vector<int>& nums)
-{
-    for(const int& x:nums)
+    for (int i = 0; i < n2; i++)
     {
-        std::cout<<x<<" ";
+        rightArr[i] = nums[mid + 1 + i];
     }
-    std::cout<<std::endl;
+
+    int i = 0;
+    int j = 0;
+    int k = left;
+
+    while (i < n1 && j < n2)
+    {
+        if (leftArr[i] <= rightArr[j])
+        {
+            nums[k++] = leftArr[i++];
+        }
+        else
+        {
+            nums[k++] = rightArr[j++];
+        }
+    }
+
+    while (i < n1)
+        nums[k++] = leftArr[i++];
+    while (j < n2)
+        nums[k++] = rightArr[j++];
 }
 
-void QuickSort(std::vector<int>& nums,int left,int right)
+void mergeSort(std::vector<int> &nums, int left, int right)
 {
-    if(left > right) return;
-    int index = PartitionHoare(nums,left,right);
-    QuickSort(nums,left,index-1);
-    QuickSort(nums,index+1,right);
+    if (left < right)
+    {
+        int mid = left + (right - left) / 2;
+        mergeSort(nums, left, mid);
+        mergeSort(nums, mid + 1, right);
+        merge(nums, left, mid, right);
+    }
 }
-
 
 int main()
 {
-    std::vector<int> nums{2,3,1,6,4,8,0,10};
-    std::cout<<"Before Sorting:"<<std::endl;
-    show(nums);
 
-    QuickSort(nums,0,nums.size()-1);
+    std::vector<int> nums = {12, 11, 13, 5, 6, 7};
+    int n = nums.size();
+    mergeSort(nums, 0, n - 1);
 
-    std::cout<<"After Sorting:"<<std::endl;
-    show(nums);
+    for (int num : nums)
+    {
+        std::cout << num << " ";
+    }
 
+    std::cout << std::endl;
+
+    return 0;
 }
-
 ```
 
 ### sort的相关问题
