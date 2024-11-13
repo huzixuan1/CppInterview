@@ -205,6 +205,51 @@ int main() {
 }
 ```
 
+### 插入排序
+
+```cpp
+#include <iostream>
+#include <vector>
+
+void insertionSort(std::vector<int>& nums) {
+    // 从第二个元素开始，逐个插入到已排序部分
+    for (int i = 1; i < nums.size(); i++) {
+        int key = nums[i];  // 当前要插入的元素
+        int j = i - 1;      // 已排序部分的最后一个元素下标
+
+        // 在已排序部分中找到正确的位置，移动元素
+        while (j >= 0 && nums[j] > key) {
+            nums[j + 1] = nums[j];  // 把比 key 大的元素向右移动一位
+            j--;
+        }
+
+        // 插入 key 到合适的位置
+        nums[j + 1] = key;
+    }
+}
+
+int main() {
+    std::vector<int> nums = {12, 11, 13, 5, 6};
+
+    std::cout << "Before sorting: ";
+    for (int num : nums) {
+        std::cout << num << " ";
+    }
+    std::cout << std::endl;
+
+    // 调用插入排序函数
+    insertionSort(nums);
+
+    std::cout << "After sorting: ";
+    for (int num : nums) {
+        std::cout << num << " ";
+    }
+    std::cout << std::endl;
+
+    return 0;
+}
+
+```
 
 std::sort 的底层实现通常是基于 快速排序（QuickSort）的，但它会根据数据的特性和规模动态切换到其他排序算法，形成 混合排序 的策略。具体来说：
 
