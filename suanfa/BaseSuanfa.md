@@ -88,4 +88,106 @@ https://www.cnblogs.com/DSCL-ing/p/18354021
 
 
 
+### 归并排序
+
+```cpp
+#include <iostream>
+#include <vector>
+using namespace std;
+
+// 合并两个已排序的子数组
+void merge(vector<int>& arr, int left, int mid, int right) {
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+    
+    vector<int> leftArr(n1), rightArr(n2);
+    
+    for (int i = 0; i < n1; i++) leftArr[i] = arr[left + i];
+    for (int i = 0; i < n2; i++) rightArr[i] = arr[mid + 1 + i];
+    
+    int i = 0, j = 0, k = left;
+    while (i < n1 && j < n2) {
+        if (leftArr[i] <= rightArr[j]) {
+            arr[k++] = leftArr[i++];
+        } else {
+            arr[k++] = rightArr[j++];
+        }
+    }
+    
+    while (i < n1) arr[k++] = leftArr[i++];
+    while (j < n2) arr[k++] = rightArr[j++];
+}
+
+// 归并排序函数
+void mergeSort(vector<int>& arr, int left, int right) {
+    if (left < right) {
+        int mid = left + (right - left) / 2;
+        mergeSort(arr, left, mid);  // 递归排序左半部分
+        mergeSort(arr, mid + 1, right);  // 递归排序右半部分
+        merge(arr, left, mid, right);  // 合并已排序的子数组
+    }
+}
+
+int main() {
+    vector<int> arr = {12, 11, 13, 5, 6, 7};
+    int n = arr.size();
+    mergeSort(arr, 0, n - 1);
+    for (int num : arr) {
+        cout << num << " ";
+    }
+    return 0;
+}
+
+
+
+#include <iostream>
+#include <vector>
+using namespace std;
+
+// 调整堆，使得当前节点为父节点，左右子节点都满足堆的性质
+void heapify(vector<int>& arr, int n, int i) {
+    int largest = i;  // 将当前节点作为最大元素
+    int left = 2 * i + 1;  // 左子节点
+    int right = 2 * i + 2;  // 右子节点
+
+    if (left < n && arr[left] > arr[largest]) {
+        largest = left;
+    }
+
+    if (right < n && arr[right] > arr[largest]) {
+        largest = right;
+    }
+
+    if (largest != i) {
+        swap(arr[i], arr[largest]);
+        heapify(arr, n, largest);  // 递归调整堆
+    }
+}
+
+// 堆排序函数
+void heapSort(vector<int>& arr) {
+    int n = arr.size();
+
+    // 构建最大堆
+    for (int i = n / 2 - 1; i >= 0; i--) {
+        heapify(arr, n, i);
+    }
+
+    // 逐个从堆中取出最大元素，并调整堆
+    for (int i = n - 1; i > 0; i--) {
+        swap(arr[0], arr[i]);  // 将最大元素交换到数组末尾
+        heapify(arr, i, 0);  // 调整堆
+    }
+}
+
+int main() {
+    vector<int> arr = {4, 10, 3, 5, 1};
+    heapSort(arr);
+    for (int num : arr) {
+        cout << num << " ";
+    }
+    return 0;
+}
+```
+
 
