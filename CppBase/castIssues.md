@@ -114,11 +114,11 @@ int main() {
   修正后应使用 dynamic_cast，并确保 Base 是多态类型。
 
 10. 能否通过 static_cast 将 const int* 转为 int*？为什么？
-考点：const_cast 和 static_cast 的作用范围。
-提示回答：static_cast 不允许移除 const 限定符；移除 const 应使用 const_cast。
+  考点：const_cast 和 static_cast 的作用范围。
+  提示回答：static_cast 不允许移除 const 限定符；移除 const 应使用 const_cast。
+
 11. 解释为什么以下代码是未定义行为：
-cpp
-复制代码
+```cpp
 #include <iostream>
 using namespace std;
 
@@ -130,30 +130,33 @@ int main() {
     cout << "New value of x: " << x << endl; // 未定义行为
     return 0;
 }
-问题分析：
-为什么修改 x 的位模式可能导致未定义行为？
-在什么情况下可以合法地使用 reinterpret_cast？
+```
+  问题分析：
+    为什么修改 x 的位模式可能导致未定义行为？
+    在什么情况下可以合法地使用 reinterpret_cast？
+    
 12. 如何在 C++ 中安全地将一个类对象的成员序列化为字节流？
-考点：reinterpret_cast 在序列化中的应用。
-提示回答：
-可以将对象的地址通过 reinterpret_cast 转换为 char*，然后逐字节处理。
-应确保类没有包含指针或其他不直接存储数据的成员。
-实际场景分析
-13. 设计一个函数，接受一个 void* 指针，并根据上下文信息将其安全地转换为特定类型。
-考点：reinterpret_cast 和动态类型安全。
-示例问题：
-如何通过额外的上下文信息（如类型标识）确保转换的安全性？
-14. 在什么情况下不建议使用类型转换？
-考点：理解类型转换的局限性。
-提示回答：
-尽量避免不必要的类型转换，特别是使用 reinterpret_cast 和 const_cast。
-类型设计和接口定义应该尽量减少转换的需求。
-15. 什么时候会发生隐式类型转换？如何避免可能的错误？
-考点：隐式转换的触发条件和潜在问题。
-示例问题：
-为什么以下代码可能引发问题？
-cpp
-复制代码
+  考点：reinterpret_cast 在序列化中的应用。
+  提示回答：
+    可以将对象的地址通过 reinterpret_cast 转换为 char*，然后逐字节处理。
+    应确保类没有包含指针或其他不直接存储数据的成员。
+    
+14. 设计一个函数，接受一个 void* 指针，并根据上下文信息将其安全地转换为特定类型。
+  考点：reinterpret_cast 和动态类型安全。
+  示例问题：
+  如何通过额外的上下文信息（如类型标识）确保转换的安全性？
+
+15. 在什么情况下不建议使用类型转换？
+  考点：理解类型转换的局限性。
+  提示回答：
+  尽量避免不必要的类型转换，特别是使用 reinterpret_cast 和 const_cast。
+  类型设计和接口定义应该尽量减少转换的需求。
+
+16. 什么时候会发生隐式类型转换？如何避免可能的错误？
+  考点：隐式转换的触发条件和潜在问题。
+  示例问题：
+  为什么以下代码可能引发问题？
+
 void func(int x);
 func(3.14); // 隐式转换 double -> int
 
