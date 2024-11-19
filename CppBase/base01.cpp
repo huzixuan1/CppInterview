@@ -108,3 +108,144 @@ class MyClass
 
 
 
+
+// 实战
+
+/**
+ * 实战cpp中的构造函数
+ */
+
+#include <utility>
+#include <iostream>
+
+using namespace std;
+
+class DynamicArray
+{
+private:
+    int *data;   // 动态分配的内存
+    size_t size; // 数组大小
+
+public:
+    // 1.默认构造函数
+    DynamicArray() : data(nullptr), size(0)
+    {
+        std::cout << "Default Constructor called" << std::endl;
+    }
+
+    // 2.有参构造函数
+    explicit DynamicArray(size_t n) : size(n)
+    {
+        data = new int(n);
+        for (size_t i = 0; i < n; i++)
+        {
+            data[i] = 0; // 初始化为0
+        }
+        std::cout << "Parameterized Constructor called for size = " << size << std::endl;
+    }
+
+    // 3.拷贝构造函数
+    DynamicArray(const DynamicArray &other) : size(other.size)
+    {
+        data = new int(size);
+        for (size_t i = 0; i < size; i++)
+        {
+            data[i] = other.data[i];
+        }
+        std::cout << "Copy Constructor called" << std::endl;
+    }
+
+    // 4.移动拷贝构造函数
+    DynamicArray(DynamicArray &&other) noexcept : data(other.data), size(other.size)
+    {
+        other.data = nullptr; // 转移所有权
+        other.size = 0;
+        std::cout << "Move Constructor called" << std::endl;
+    }
+
+    // 5.委托构造函数
+    DynamicArray(int defaultValue, size_t n) : DynamicArray(n) // 调用有参数构造函数
+    {
+        for (size_t i = 0; i < n; i++)
+        {
+            data[i] = defaultValue;
+        }
+        std::cout << "Delegating Constructor called with defaultValue = " << defaultValue << std::endl;
+    }
+
+    // 6.默认化构造函数
+    // DynamicArray &operator=(const DynamicArray &) = default; //  使用编译器生成的赋值运算
+    DynamicArray &operator=(const DynamicArray &other)
+    {
+        if (this == &other)
+        {
+            return *this; // 防止自赋值
+        }
+
+        // 释放当前对象的动态内存，防止内存泄露
+        delete[] data;
+
+        // 分配新的内存并拷贝数据
+        size = other.size;
+        data = new int(size);
+        for (size_t i = 0; i < size; ++i)
+        {
+            data[i] = other.data[i];
+        }
+
+        std::cout << "Copy assignment operator called" << std::endl;
+        return *this;
+    }
+
+    // 7.删除构造函数
+    DynamicArray &operator=(DynamicArray &&) = delete; // 禁止移动复制运算符
+
+    // 8.析构函数
+    ~DynamicArray()
+    {
+        delete[] data;
+        std::cout << "Destructor called" << std::endl;
+    }
+
+    // 打印数组内容
+    void print() const
+    {
+        for (size_t i = 0; i < size; i++)
+        {
+            std::cout << data[i] << " ";
+        }
+        std::cout << std::endl;
+    }
+};
+
+int main()
+{
+    // 1.默认构造函数
+    DynamicArray arr1;
+
+    // 2.有参构造函数
+    DynamicArray arr2(5);
+    arr2.print();
+
+    // 3.拷贝构造函数
+    DynamicArray arr3 = arr2;
+    arr3.print();
+
+    // 4.移动构造函数
+    DynamicArray arr4 = std::move(arr3);
+    arr4.print();
+
+    // 5.委托构造函数
+    DynamicArray arr5(42, 5);
+    arr5.print();
+
+    // 6.默认化构造函数（赋值运算符，未显示调用，隐式测试）
+    arr1 = arr2; // 使用默认化的赋值运算符
+    arr1.print();
+
+    // 7.禁止移动赋值运算符（会导致编译错误）
+    // arr1 = std::move(arr4);  // c错误：移动赋值运算符被删除
+
+    return 0;
+}
+
