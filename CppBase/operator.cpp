@@ -409,7 +409,7 @@ public:
     }
 
     // 自增运算
-    Complex operator++(int)     // 后置
+    Complex operator++(int)     // 后置 operator++(int) 这里的int是必须要写的，用来区分前置还是后置
     {
         Complex temp=*this;
         this->real++;
