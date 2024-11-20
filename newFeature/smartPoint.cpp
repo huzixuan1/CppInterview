@@ -114,6 +114,82 @@ int main()
 }
 
 
+//////shared_ptr//////
+#include <memory>
+#include <iostream>
+using namespace std;
+
+/**
+std::shared_ptr 是一种共享所有权的智能指针，
+多个 shared_ptr 可以共同管理同一资源。当最后一个 std::shared_ptr 离开作用域时，资源会被释放。
+主要功能和特点：
+    引用计数机制：每次拷贝会增加引用计数，每次销毁会减少引用计数。
+    自动释放资源：当引用计数为零时释放资源。
+    线程安全的引用计数。
+常用函数：
+    std::make_shared<T>(args...)：创建一个 std::shared_ptr。
+    use_count()：返回当前资源的引用计数。
+    get()：返回裸指针，不影响引用计数。
+    reset(ptr)：重置为新资源，引用计数归零时释放旧资源。
+*/
+
+class Resource
+{
+    public:
+        Resource()
+        {
+            std::cout<<"Resource acquired"<<std::endl;
+        }
+
+        ~Resource()
+        {
+            std::cout<<"Resource release"<<std::endl;
+        }
+
+        void print()
+        {
+            std::cout<<"Resource is in use"<<std::endl;
+        }
+};
+
+// Resource acquired
+// Initial reference count:1
+// Reference count after shaing:2
+// Reference count after ptr2 goes out of scope:1
+// Resource is in use
+// Reference count after remain:1
+// Resource acquired
+// Resource release
+// Reference count after reset:1
+// Resource release
+
+int main()
+{
+
+    // 1.使用std::make_shared<T>(args...)创建std::shared_ptr
+    std::shared_ptr<Resource> ptr1 = std::make_shared<Resource>();
+    std::cout<<"Initial reference count:"<<ptr1.use_count()<<std::endl;
+
+    //2.use_count()返回当前引用计数
+    {
+        std::shared_ptr<Resource> ptr2 = ptr1;  // 共享资源
+        std::cout<<"Reference count after shaing:"<<ptr1.use_count()<<std::endl;
+    }   // ptr2离开作用域，引用计数减1 （shared_ptr的生命周期和作用域也是相关的）
+
+    std::cout<<"Reference count after ptr2 goes out of scope:"<<ptr1.use_count()<<std::endl;
+
+    // 3.get()返回裸指针，不影响引用计数
+    Resource* rawPtr = ptr1.get();
+    rawPtr->print();    // 使用裸指针访问资源
+    std::cout<<"Reference count after remain:"<<ptr1.use_count()<<std::endl;
+
+    // 4.reset(ptr)重置为新的资源
+    ptr1.reset(new Resource());     // 释放旧资源并管理新资源
+    std::cout<<"Reference count after reset:"<<ptr1.use_count()<<std::endl;
+
+    return 0;
+}
+
 // 手动实现UniquePtr
 
 #include <iostream>
