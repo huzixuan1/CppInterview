@@ -286,6 +286,53 @@ int main()
 }
 
 
+///////打破循环引用///////////
+
+    /*
+    循环引用问题通常出现在 std::shared_ptr 之间的相互持有。比如，两个对象 A 和 B 都持有对方的 std::shared_ptr，
+    这就会导致它们的引用计数永远不会为零，造成内存泄漏。
+    要解决这个问题，可以使用 std::weak_ptr。我们可以将其中一个对象持有 std::weak_ptr 来打破循环引用。
+    */
+
+#include <memory>
+#include <iostream>
+using namespace std;
+
+// 原本的循环引用
+#include <iostream>
+#include <memory>
+
+class B; // 前向声明
+
+class A {
+public:
+    std::shared_ptr<B> b;  // A 持有对 B 的 shared_ptr
+    ~A() { std::cout << "A destroyed\n"; }
+};
+
+class B {
+public:
+    // std::shared_ptr<A> a;  // B 持有对 A 的 shared_ptr
+    // 解除循环引用，B修改成weak_ptr就可以解决这个问题了
+    std::weak_ptr<A> a;
+    ~B() { std::cout << "B destroyed\n"; }
+};
+
+int main() {
+    // 创建 A 和 B 的共享指针
+    std::shared_ptr<A> a = std::make_shared<A>();
+    std::shared_ptr<B> b = std::make_shared<B>();
+
+    a->b = b;  // A 持有 B
+    b->a = a;  // B 持有 A，形成循环引用
+
+    // 此时是没有办法释放资源的
+
+    return 0;
+}
+
+//////////////////////////
+
 
 // 手动实现UniquePtr
 
