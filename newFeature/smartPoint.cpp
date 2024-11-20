@@ -1,3 +1,119 @@
+#include <memory>
+#include <iostream>
+using namespace std;
+
+/**
+std::unique_ptr 是一种独占所有权的智能指针，表示某个资源只能被一个指针拥有。它是轻量级的智能指针，通常用于对象的独占管理。
+
+主要功能和特点：
+    禁止复制操作（拷贝构造和拷贝赋值被删除）。
+    支持转移所有权（通过 std::move）。
+    自动释放内存（调用资源的析构函数）。
+常用函数：
+    std::make_unique<T>(args...)：创建一个 std::unique_ptr。
+    get()：返回裸指针，但不转移所有权。
+    release()：释放所有权，返回裸指针，用户需要手动管理释放的内存,避免内存泄漏。
+    reset(ptr)：将 std::unique_ptr 重置为管理新的资源，释放旧资源。
+*/
+
+class Resource
+{
+    private:
+        int value_;
+    public:
+        Resource(int value):value_(value)
+        {
+            std::cout<<"Resource acquired,value = "<<value_<<std::endl;
+        }
+        ~Resource()
+        {
+            std::cout<<"Resource released"<<std::endl;
+        }
+
+        void show()
+        {
+            std::cout<<"test for Resource smartPoint"<<std::endl;
+        }
+
+        void doSometing()
+        {
+            std::cout<<"Doing someting……"<<std::endl;
+        }
+
+        void showValue()
+        {
+            std::cout<<"value:"<<value_<<std::endl;
+        }
+};
+
+void  useRawPointer(Resource* rawPtr)
+{
+    // 接收裸指针并执行操作
+    rawPtr->doSometing();
+}
+
+int main()
+{
+
+    // 基本使用方式
+
+    std::unique_ptr<Resource> ptr1 = std::make_unique<Resource>(10);
+
+    // 转移所有权
+    std::unique_ptr<Resource> ptr2 = std::move(ptr1);
+    if(!ptr1){
+        std::cout<<"ptr1 is now null"<<std::endl;
+    }
+
+    ptr2->show();
+
+    if(ptr1)
+    {
+        ptr1->show();
+    }else{
+        std::cout<<"ptr1 is nullptr,cannt call show()"<<std::endl;
+    }
+    std::cout<<"------------get()----------"<<std::endl;
+    // 自动释放内存，出作用域
+
+    // get方式
+    std::unique_ptr<Resource> ptr3 = std::make_unique<Resource>(20);
+    Resource* rawPtr = ptr3.get();
+    useRawPointer(rawPtr);
+
+    std::cout<<"------------release()----------"<<std::endl;
+    // release释放所有权
+    auto ptr4 = std::make_unique<Resource>(30);
+    Resource* raw = ptr4.release();
+    if(!ptr4)
+    {
+        std::cout<<"smart ptr4 no longer owns the resourece"<<std::endl;
+    }
+
+    // 需要使用裸指针进行资源管理
+    raw->doSometing();
+    // 需要手动释放资源
+    delete raw;
+
+    std::cout<<"------------reset()----------"<<std::endl;
+    // reset的使用方式
+    std::unique_ptr<Resource> ptr5 = std::make_unique<Resource>(40);
+    // 原资源操作
+    ptr5->showValue();
+    // 使用reset()重置为新的资源
+    ptr5.reset(new Resource(50));
+    // 新资源的操作
+    ptr5->showValue();
+    // 显示的释放资源
+    ptr5.reset(nullptr);
+    if(!ptr5)
+    {
+        std::cout<<"Resource has been released"<<std::endl;
+    }
+    return 0;
+}
+
+
 // 手动实现UniquePtr
 
 #include <iostream>
