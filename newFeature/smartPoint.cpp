@@ -199,6 +199,94 @@ int main()
     return 0;
 }
 
+
+////////weak_ptr/////////
+
+#include <memory>
+#include <iostream>
+using namespace std;
+
+/**
+ * 
+ * std::weak_ptr 是一种弱引用，不参与资源的引用计数管理，
+ * 通常用于打破循环引用。当 std::shared_ptr 创建的对象需要共享给多个位置，
+ * 而这些位置又可能形成循环依赖时，使用 std::weak_ptr 可以避免内存泄漏。
+
+主要功能和特点：
+    不增加资源的引用计数。
+    提供 expired() 判断资源是否已经被释放。
+    提供 lock() 方法获取对应的 std::shared_ptr，如果资源已释放，返回空的 shared_ptr。
+
+常用函数：
+    lock()：返回一个 std::shared_ptr，指向所管理的资源。
+    expired()：判断资源是否已经被释放。
+    reset()：释放 weak_ptr 对资源的弱引用。
+ */
+
+class Resource
+{
+    public:
+        Resource()
+        {
+            std::cout<<"Resource acquired"<<std::endl;
+        }
+
+        ~Resource()
+        {
+            std::cout<<"Resource released"<<std::endl;
+        }
+};
+
+int main()
+{
+    // lock()使用
+    std::shared_ptr<Resource> ptr1 = std::make_shared<Resource>();
+    std::weak_ptr<Resource> weakPtr = ptr1; // 不增加计数
+
+    if(auto sp = weakPtr.lock())
+    {
+        std::cout<<"Resource is still alive"<<std::endl;
+    }else{
+        std::cout<<"Resouce has been released"<<std::endl;
+    }
+
+    ptr1.reset();   // 释放资源
+
+    if(auto sp = weakPtr.lock())
+    {
+        std::cout<<"Resource is still alive"<<std::endl;
+    }else{
+        std::cout<<"Resource has been released"<<std::endl;
+    }
+
+    std::cout<<"=====expired()===="<<std::endl;
+    
+    // expired()使用
+    std::shared_ptr<Resource> ptr2 = std::make_shared<Resource>();
+    std::weak_ptr<Resource> weakPtr2 = ptr2;    // 创建弱引用
+
+    // 检查资源是否过期
+    if(weakPtr2.expired())
+    {
+        std::cout<<"Resource has expired"<<std::endl;
+    }else{
+        std::cout<<"Resource is still alive"<<std::endl;
+    }
+
+    // 释放资源，再次检查
+    ptr2.reset();
+    if(weakPtr2.expired())
+    {
+        std::cout<<"Resource has expired"<<std::endl;
+    }else{
+        std::cout<<"Resource is still alive"<<std::endl;
+    }
+
+    std::cout<<"====解除循环引用==="<<std::endl;
+}
+
+
+
 // 手动实现UniquePtr
 
 #include <iostream>
