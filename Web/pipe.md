@@ -90,11 +90,100 @@ int main() {
     return 0;
 }
 
-
+```
 
 ### socket 进程间通信
 
-···cpp
+使用下面的这个简洁版本
+```cpp
+#include <iostream>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <cstring>
+#include <string>
+
+void child_process(int socket_fd) {
+    // 子进程逻辑
+    char buffer[1024];
+    while (true) {
+        // 接收父进程发送的数据
+        ssize_t n = read(socket_fd, buffer, sizeof(buffer) - 1);
+        if (n <= 0) {
+            std::cerr << "Child: Connection closed or error\n";
+            break;
+        }
+        buffer[n] = '\0';
+        std::cout << "Child received: " << buffer << std::endl;
+
+        // 回复父进程
+        std::string reply = "Child processed: " + std::string(buffer);
+        write(socket_fd, reply.c_str(), reply.size());
+    }
+}
+
+void parent_process(int socket_fd) {
+    // 父进程逻辑
+    std::string message;
+    char buffer[1024];
+    while (true) {
+        // 输入消息
+        std::cout << "Parent: Enter message to send: ";
+        std::getline(std::cin, message);
+        if (message == "exit") {
+            break;
+        }
+
+        // 发送给子进程
+        write(socket_fd, message.c_str(), message.size());
+
+        // 接收子进程的回复
+        ssize_t n = read(socket_fd, buffer, sizeof(buffer) - 1);
+        if (n <= 0) {
+            std::cerr << "Parent: Connection closed or error\n";
+            break;
+        }
+        buffer[n] = '\0';
+        std::cout << "Parent received: " << buffer << std::endl;
+    }
+}
+
+int main() {
+    int socket_pair[2];
+
+    // 创建 socketpair
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, socket_pair) == -1) {
+        perror("socketpair");
+        return 1;
+    }
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        return 1;
+    }
+
+    if (pid == 0) {
+        // 子进程
+        close(socket_pair[0]);  // 关闭父进程的 socket
+        child_process(socket_pair[1]);
+        close(socket_pair[1]);
+    } else {
+        // 父进程
+        close(socket_pair[1]);  // 关闭子进程的 socket
+        parent_process(socket_pair[0]);
+        close(socket_pair[0]);
+    }
+
+    return 0;
+}
+
+
+```
+
+
+
+```cpp
 /**
  * introduce:
  *  每个子进程都有一对 socketpair，也就是说，
@@ -187,3 +276,5 @@ int main() {
     
     return 0;
 }
+```
+
