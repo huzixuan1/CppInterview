@@ -59,3 +59,108 @@ https://blog.csdn.net/everysmile/article/details/139637570
 调试和测试：在项目实现后，进行充分的测试，确保程序在高并发或网络不稳定的情况下仍能正常工作。
 扩展功能：在完成基本功能后，可以尝试添加更多功能，如用户身份验证、加密传输、图形用户界面等，进一步提升项目的复杂性和学习深度。
 通过完成这些项目，你可以提高对网络编程的理解和实际操作能力，从而更熟悉网络编程的各个方面。
+
+### socket基本用法
+```cpp
+// 服务器
+#include <iostream>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <cstring>
+#include <sys/socket.h>
+
+int main() {
+    // 创建套接字
+    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd == -1) {
+        std::cerr << "Socket creation failed!" << std::endl;
+        return 1;
+    }
+
+    // 设置服务器地址
+    sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;  // 任意地址
+    server_addr.sin_port = htons(8080);        // 设置端口
+
+    // 绑定套接字到地址
+    if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
+        std::cerr << "Bind failed!" << std::endl;
+        return 1;
+    }
+
+    // 开始监听连接
+    if (listen(server_fd, 5) == -1) {
+        std::cerr << "Listen failed!" << std::endl;
+        return 1;
+    }
+
+    std::cout << "Waiting for connection..." << std::endl;
+
+    // 等待客户端连接
+    sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
+    if (client_fd == -1) {
+        std::cerr << "Accept failed!" << std::endl;
+        return 1;
+    }
+
+    std::cout << "Client connected!" << std::endl;
+
+    // 接收客户端数据
+    char buffer[1024];
+    int bytes_received = recv(client_fd, buffer, sizeof(buffer), 0);
+    if (bytes_received > 0) {
+        buffer[bytes_received] = '\0';
+        std::cout << "Received message: " << buffer << std::endl;
+    }
+
+    // 关闭套接字
+    close(client_fd);
+    close(server_fd);
+    return 0;
+}
+```
+
+```cpp
+// 客户端
+#include <iostream>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <cstring>
+#include <sys/socket.h>
+
+int main() {
+    // 创建套接字
+    int client_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (client_fd == -1) {
+        std::cerr << "Socket creation failed!" << std::endl;
+        return 1;
+    }
+
+    // 设置服务器地址
+    sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(8080);
+    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");  // 本地地址
+
+    // 连接到服务器
+    if (connect(client_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
+        std::cerr << "Connection failed!" << std::endl;
+        return 1;
+    }
+
+    std::cout << "Connected to server!" << std::endl;
+
+    // 发送数据
+    const char* message = "Hello, server!";
+    send(client_fd, message, strlen(message), 0);
+
+    // 关闭套接字
+    close(client_fd);
+    return 0;
+}
+```
+
+
