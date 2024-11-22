@@ -52,3 +52,28 @@ void inMsgRecvQueue()
 }
 
 
+///////
+#include <iostream>
+#include <mutex>
+
+std::mutex mtx;
+
+void example() {
+    // 使用 std::unique_lock 手动加锁
+    std::unique_lock<std::mutex> uniqueLock(mtx);
+
+    // 现在传递给 std::lock_guard，但不重新加锁
+    std::lock_guard<std::mutex> lock(mtx, std::adopt_lock);
+
+    // 这里 `std::lock_guard` 并不会加锁，因为 `mtx` 已经被 `uniqueLock` 加锁了。
+    std::cout << "Lock acquired via unique_lock and adopted by lock_guard\n";
+    // `uniqueLock` 会在作用域结束时自动解锁 `mtx`，同时 `lock_guard` 不会做任何操作。
+}
+
+int main() {
+    example();
+    return 0;
+}
+
+
+
