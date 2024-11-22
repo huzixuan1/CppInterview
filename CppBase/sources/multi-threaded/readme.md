@@ -182,6 +182,114 @@ void decrement() {
 
 ```
 
+#### std::recursive_mutex
+递归锁（也称为递归互斥锁，std::recursive_mutex）是一个特殊的锁，它允许同一个线程多次锁定同一个资源而不会导致死锁。换句话说，当一个线程已经持有某个锁时，它可以在不释放锁的情况下再次请求该锁，而不会被阻塞。
+
+递归锁的特点：
+同一线程可以多次锁定：与普通的 std::mutex 不同，std::recursive_mutex 允许同一线程在已持有该锁的情况下，继续获得该锁。每次锁定都会增加一个锁计数，当锁计数归零时，锁才会被释放。
+适用于递归调用场景：递归锁非常适用于那些可能会因为递归调用而多次进入同一临界区的场景，避免了死锁的发生。
+递归锁的使用场景：
+递归函数：如果一个函数在调用自己时需要访问共享资源，而这个共享资源已经被当前线程锁定，那么使用递归锁可以避免死锁。
+复杂的多层调用：在复杂的多层函数调用中，可能会重复锁定相同的资源。在这种情况下，如果使用普通的互斥锁，可能会因为多次尝试锁定同一个资源而死锁。递归锁可以解决这个问题。
+
+```cpp
+#include <iostream>
+#include <mutex>
+#include <thread>
+
+std::recursive_mutex mtx;  // 递归锁
+int counter = 0;
+
+void recursive_lock_function(int depth) {
+    if (depth <= 0) return;
+    std::lock_guard<std::recursive_mutex> lock(mtx);  // 锁定递归锁
+    counter++;  // 操作共享资源
+    std::cout << "Depth: " << depth << ", Counter: " << counter << std::endl;
+    recursive_lock_function(depth - 1);  // 递归调用
+}
+
+int main() {
+    std::thread t1(recursive_lock_function, 5);
+    t1.join();
+    return 0;
+}
+
+```
+
+#### Spinlock
+自旋锁（Spinlock）
+类型：std::atomic_flag 或 std::spinlock（C++20 引入）
+用途：如果锁已经被其他线程占用，当前线程会不断检查锁是否释放，而不会被挂起。
+特点：
+    在锁未被释放时，线程会不停地自旋（循环检查锁状态），这比传统的阻塞方式（如 std::mutex）要轻量，但如果锁长期不释放，可能会导致 CPU 浪费。
+    适合短时间占用锁的场景。
+    使用场景：用于锁的争用时间非常短的场景，例如频繁操作小的共享资源。
+
+
+```cpp
+std::atomic_flag lock = ATOMIC_FLAG_INIT;
+
+// 自旋锁
+void spinlock_example() {
+    while (lock.test_and_set(std::memory_order_acquire)) {
+        // 等待锁释放
+    }
+    // 访问共享资源
+    lock.clear(std::memory_order_release);
+}
+
+```
+
+#### 读写锁（Read-Write Lock）
+类型：std::shared_timed_mutex 或 std::shared_mutex
+用途：允许多个线程同时读取共享资源，但只有一个线程可以写入该资源。
+特点：
+    适用于读多写少的场景，避免了每次写操作都需要独占锁的情况，提高了读操作的并发性。
+    使用场景：高并发读取的场景，例如缓存读取。
+
+```cpp
+#include <iostream>
+#include <shared_mutex>
+#include <thread>
+#include <vector>
+
+std::shared_mutex rw_lock;  // 读写锁
+int shared_data = 0;        // 共享资源
+
+// 读操作，多个线程可以并发读取
+void read_data(int id) {
+    std::shared_lock<std::shared_mutex> lock(rw_lock);  // 获取共享锁
+    std::cout << "Thread " << id << " is reading shared_data: " << shared_data << std::endl;
+}
+
+// 写操作，只有一个线程可以写入
+void write_data(int id, int value) {
+    std::unique_lock<std::shared_mutex> lock(rw_lock);  // 获取独占锁
+    shared_data = value;
+    std::cout << "Thread " << id << " is writing shared_data: " << shared_data << std::endl;
+}
+
+int main() {
+    std::vector<std::thread> threads;
+
+    // 启动多个读线程
+    for (int i = 0; i < 5; ++i) {
+        threads.push_back(std::thread(read_data, i));
+    }
+
+    // 启动一个写线程
+    threads.push_back(std::thread(write_data, 100, 42));
+
+    // 等待所有线程完成
+    for (auto& t : threads) {
+        t.join();
+    }
+
+    return 0;
+}
+
+```
+
 #### condition_variable
 
 **std::condition_variable
