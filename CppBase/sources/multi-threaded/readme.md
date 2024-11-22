@@ -1,3 +1,137 @@
+# 锁机制对比表
+
+| 锁类型               | 是否支持延迟加锁 | 是否支持显式解锁 | 是否支持多互斥量加锁 | 是否支持条件变量 | 适用标准 | 适用场景                      |
+|----------------------|------------------|------------------|---------------------|------------------|----------|-------------------------------|
+| `std::lock_guard`    | 否               | 否               | 否                  | 否               | C++11     | 简单单锁场景                  |
+| `std::unique_lock`   | 是               | 是               | 否                  | 是               | C++11     | 复杂的单锁场景，需灵活控制锁  |
+| `std::scoped_lock`   | 否               | 否               | 是                  | 否               | C++17     | 多锁场景，现代简洁用法        |
+| `std::timed_mutex`   | 是（超时）       | 是               | 否                  | 否               | C++11     | 超时控制的单锁场景            |
+| `std::shared_mutex`  | 是（共享锁）     | 是               | 是（读锁与写锁）    | 否               | C++17     | 读多写少，高并发场景          |
+| `std::recursive_mutex` | 否             | 否               | 否                  | 否               | C++11     | 单线程递归加锁场景            |
+
+
+#### 1.std::lock_guard
+特点
+    最简单的 RAII 锁，主要用于保护一个互斥量。
+    在构造时自动加锁，在析构时自动解锁。
+    不支持延迟加锁、解锁和条件变量等复杂操作。
+
+```cpp
+std::mutex mtx;
+
+void func() {
+    std::lock_guard<std::mutex> lock(mtx);  // 加锁
+    // 临界区代码
+}  // 自动解锁
+
+```
+
+
+#### 2.std::unique_lock
+特点
+    提供更灵活的锁管理：
+    支持延迟加锁。
+    支持显式解锁和重新加锁。
+    可与条件变量一起使用。
+    比 std::lock_guard 更强大，但稍微有点性能开销。
+
+```cpp
+
+std::mutex mtx;
+
+void func() {
+    // 延迟加锁
+    std::unique_lock<std::mutex> lock(mtx, std::defer_lock); 
+    // 显式加锁
+    lock.lock();
+    // 临界区代码
+    lock.unlock();  // 显式解锁
+}
+
+```
+
+#### 3.std::scoped_lock
+特点
+    C++17 引入的现代锁，支持同时锁定多个互斥量。
+    自动处理死锁问题。
+    无需显式指定互斥量类型（例如无需 <std::mutex>）。
+    不支持延迟加锁和显式解锁，专注于简单场景
+    
+```cpp
+std::mutex mtx1, mtx2;
+
+void func() {
+    std::scoped_lock lock(mtx1, mtx2);  // 同时加锁 mtx1 和 mtx2
+    // 临界区代码
+}  // 自动解锁
+
+```
+
+#### 4.std::timed_mutex 和 std::recursive_timed_mutex
+特点
+    支持超时加锁，可以使用带有超时的 try_lock_for 和 try_lock_until。
+    std::timed_mutex 是普通互斥量的增强版。
+    std::recursive_timed_mutex 允许同一线程多次加锁，解锁次数需匹配。
+    
+```cpp
+#include <mutex>
+#include <chrono>
+
+std::timed_mutex mtx;
+
+void func() {
+    if (mtx.try_lock_for(std::chrono::milliseconds(100))) {  // 尝试加锁
+        // 临界区代码
+        mtx.unlock();
+    } else {
+        // 超时处理
+    }
+}
+
+```
+
+#### 5.std::shared_mutex 和 std::shared_lock
+特点
+    C++17 引入的读写锁机制：
+    共享锁：允许多个线程同时读取（读操作不会相互阻塞）。
+    独占锁：写操作需要互斥（阻塞其他读写操作）。
+    提供更高的并发性，适合读多写少的场景。
+
+```cpp
+#include <shared_mutex>
+
+std::shared_mutex rw_mutex;
+
+void reader() {
+    std::shared_lock<std::shared_mutex> lock(rw_mutex);  // 共享锁
+    // 读取数据
+}
+
+void writer() {
+    std::unique_lock<std::shared_mutex> lock(rw_mutex);  // 独占锁
+    // 写入数据
+}
+
+```
+
+#### 6.std::adopt_lock 和 std::defer_lock
+特点
+    这些是锁构造选项，控制加锁的方式：
+    std::adopt_lock：采用已有的锁状态（假设互斥量已经被锁定）。
+    std::defer_lock：延迟加锁，稍后通过 lock() 手动加锁。
+
+```cpp
+std::mutex mtx;
+
+void func() {
+    mtx.lock();  // 手动加锁
+    std::unique_lock<std::mutex> lock(mtx, std::adopt_lock);  // 接管锁
+    // 临界区代码
+}  // 自动解锁
+
+```
+
+
 # `std::mutex` 和 `std::shared_mutex` 的区别
 
 | 特性       | `std::mutex`                                | `std::shared_mutex`                           |
@@ -155,3 +289,6 @@ int main() {
 }
 
 ```
+
+
+
