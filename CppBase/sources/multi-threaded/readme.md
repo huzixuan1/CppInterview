@@ -120,6 +120,8 @@ void writer() {
     std::adopt_lock：采用已有的锁状态（假设互斥量已经被锁定）。
     std::defer_lock：延迟加锁，稍后通过 lock() 手动加锁。
 
+    接管锁，不需要再对接管的锁进行加锁了。同时还可以对锁进行释放。
+
 ```cpp
 std::mutex mtx;
 
