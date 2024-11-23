@@ -111,3 +111,57 @@ int main()
 }
 
 
+
+// 单例模式在单元测试中的主要挑战
+无法重置实例：
+    单例的生命周期通常与程序相同，一旦实例创建后，整个运行期间都会存在。在单元测试中，可能需要在不同的测试用例之间重新初始化单例的状态，但单例的特性不允许轻易销毁或重置。
+
+隐藏的全局依赖：
+    单例模式通常引入某种全局状态，这种状态使得测试用例之间可能相互干扰（例如共享的数据或行为），违背了单元测试的独立性原则。
+
+难以模拟（Mock）依赖：
+    如果单例内部依赖某些外部服务（例如数据库连接或文件系统），在测试中模拟这些依赖会变得困难。
+
+```cpp
+// 仅仅在测试用例的时候才可以使用
+class Singleton {
+private:
+    static Singleton* instance;
+    Singleton() {}
+public:
+    static Singleton* GetInstance() {
+        if (instance == nullptr) {
+            instance = new Singleton();
+        }
+        return instance;
+    }
+
+    static void ResetInstance() { // 测试用方法
+        delete instance;
+        instance = nullptr;
+    }
+
+    void SetValue(int val) { value = val; }
+    int GetValue() const { return value; }
+
+private:
+    int value = 0;
+};
+
+Singleton* Singleton::instance = nullptr;
+
+// 测试代码
+#include <cassert>
+
+void TestSingleton() {
+    Singleton* s1 = Singleton::GetInstance();
+    s1->SetValue(42);
+    assert(s1->GetValue() == 42);
+
+    // 重置实例后应该是新的对象
+    Singleton::ResetInstance();
+    Singleton* s2 = Singleton::GetInstance();
+    assert(s2->GetValue() == 0); // 初始值应该重置
+}
+
+```
